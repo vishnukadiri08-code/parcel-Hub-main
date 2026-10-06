@@ -1,2 +1,9 @@
-/server/data/parcel_history.xlsx
-/server/data/parcel_history.xlsx.*.tmp
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+.DS_Store
+*.db
+*.sqlite
+*.sqlite3
