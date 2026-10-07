@@ -11,7 +11,8 @@
     "start": "npm run start --workspace server",
     "server": "npm run start --workspace server",
     "client": "npm run client --workspace client",
-    "seed": "npm run seed --workspace server"
+    "seed": "npm run seed --workspace server",
+    "build": "npm run build --workspace client"
   },
   "devDependencies": {
     "@rollup/rollup-darwin-arm64": "^4.64.0",
