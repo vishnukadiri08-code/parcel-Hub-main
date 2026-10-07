@@ -1,4 +1,4 @@
-const BASE_URL = '';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export async function request(endpoint, options = {}) {
   const token = localStorage.getItem('cph_auth_token');

@@ -6,12 +6,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
+const dataDir = path.resolve(__dirname, process.env.DB_DIR || 'data');
+const configuredDbPath = process.env.DB_PATH
+  ? path.resolve(process.cwd(), process.env.DB_PATH)
+  : path.join(dataDir, 'campus_hub.db');
+
+if (!fs.existsSync(path.dirname(configuredDbPath))) {
+  fs.mkdirSync(path.dirname(configuredDbPath), { recursive: true });
 }
 
-const dbPath = path.join(dataDir, 'campus_hub.db');
+const dbPath = configuredDbPath;
 const rawDb = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Failed to connect to SQLite database:', err.message);
