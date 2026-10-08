@@ -5,7 +5,7 @@ const { Pool } = pg;
 // Clean structural options object bypassing string parsers completely
 const pool = new Pool({
   user: 'postgres.nieemjmhanwlymnylcjy',
-  host: 'aws-0-us-east-1.pooler4.supabase.com',
+  host: 'aws-0-us-east-1-pooler.supabase.com',
   database: 'postgres',
   password: '7793989292kadiri',
   port: 6543,
