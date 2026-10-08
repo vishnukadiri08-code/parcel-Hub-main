@@ -2,15 +2,15 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-// Clean structural options object bypassing string parsers completely
 const pool = new Pool({
   user: 'postgres.nieemjmhanwlymnylcjy',
-  host: 'aws-0-us-east-1-pooler.supabase.com',
+  host: 'nieemjmhanwlymnylcjy.supabase.co',
   database: 'postgres',
   password: '7793989292kadiri',
-  port: 6543,
+  port: 5432,
   ssl: { rejectUnauthorized: false }
 });
+
 
 // Promisified DB helpers matching old SQLite execution patterns
 export const db = {
