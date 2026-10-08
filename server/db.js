@@ -2,29 +2,30 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-// Connect using the Supabase environment string provided by Render
+// Clean explicit connection to your Supabase instance using IPv4 mapping
 const pool = new Pool({
   connectionString: "postgresql://postgres.nieemjmhanwlymnylcjy:7793989292kadiri@://supabase.com",
   ssl: { rejectUnauthorized: false }
 });
 
-// Promisified DB helpers matching your exact old SQLite syntax
+// Promisified DB helpers matching old SQLite execution patterns
 export const db = {
   get: async (sql, params = []) => {
-    // Convert SQLite "?" placeholders to PostgreSQL "\$1, \$2" format dynamically
-    const pgSql = sql.replace(/\?/g, (_, i) => `$${params.indexOf(params[i]) + 1}`);
+    let index = 1;
+    const pgSql = sql.replace(/\?/g, () => `$${index++}`);
     const res = await pool.query(pgSql, params);
     return res.rows[0];
   },
   all: async (sql, params = []) => {
-    const pgSql = sql.replace(/\?/g, (_, i) => `$${params.indexOf(params[i]) + 1}`);
+    let index = 1;
+    const pgSql = sql.replace(/\?/g, () => `$${index++}`);
     const res = await pool.query(pgSql, params);
     return res.rows || [];
   },
   run: async (sql, params = []) => {
-    const pgSql = sql.replace(/\?/g, (_, i) => `$${params.indexOf(params[i]) + 1}`);
+    let index = 1;
+    const pgSql = sql.replace(/\?/g, () => `$${index++}`);
     const res = await pool.query(pgSql, params);
-    // Mimics SQLite response metrics
     return { lastID: res.insertId || null, changes: res.rowCount };
   },
   exec: async (sql) => {
@@ -33,7 +34,6 @@ export const db = {
 };
 
 export async function initDb() {
-  // SQLite queries translated to proper PostgreSQL syntax
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -93,7 +93,6 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_parcels_received ON parcels(received_at);
   `);
 
-  // PostgreSQL string comparison update (replaces SQLite COLLATE NOCASE)
   const retiredAccount = await db.run(
     'UPDATE users SET is_active = 0 WHERE LOWER(username) = LOWER(\$1) AND is_active = 1',
     ['guard_priya']
