@@ -4,9 +4,14 @@ const { Pool } = pg;
 
 // Reads the fresh, verified connection string directly from Render's dashboard environment variables
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  user: 'postgres.nieemjmhanwlymnylcjy',
+  host: '://supabase.com',
+  database: 'postgres',
+  password: '7793989292kadiri',
+  port: 6543,
   ssl: { rejectUnauthorized: false }
 });
+
 
 // Promisified DB helpers matching old SQLite execution patterns
 export const db = {
