@@ -28,9 +28,14 @@ export const db = {
   },
   run: async (sql, params = []) => {
     let index = 1;
-    const pgSql = sql.replace(/\?/g, () => `$${index++}`);
+    // Safely appends RETURNING id to handle Postgres insert returns smoothly
+    let pgSql = sql.replace(/\?/g, () => `$${index++}`);
+    if (pgSql.trim().toUpperCase().startsWith('INSERT')) {
+      pgSql = `${pgSql.trim().replace(/;$/, '')} RETURNING id`;
+    }
     const res = await pool.query(pgSql, params);
-    return { lastID: res.insertId || null, changes: res.rowCount };
+    const lastID = res.rows && res.rows[0] ? res.rows[0].id : null;
+    return { lastID: lastID, changes: res.rowCount };
   },
   exec: async (sql) => {
     return await pool.query(sql);
@@ -38,7 +43,7 @@ export const db = {
 };
 
 export async function initDb() {
-  await db.exec(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
@@ -97,12 +102,13 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_parcels_received ON parcels(received_at);
   `);
 
-  const retiredAccount = await db.run(
+  // Uses clean native Postgres parameter mapping (\$1) via direct pool connection
+  const retiredAccount = await pool.query(
     "UPDATE users SET is_active = 0 WHERE LOWER(username) = LOWER(\$1) AND is_active = 1",
     ['guard_priya']
   );
 
-  if (retiredAccount.changes > 0) {
+  if (retiredAccount.rowCount > 0) {
     console.log('[DB] Deactivated retired security account.');
   }
   console.log('[DB] Supabase PostgreSQL tables initialized successfully.');
