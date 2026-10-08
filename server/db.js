@@ -2,9 +2,13 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-// Clean explicit connection to your Supabase instance using IPv4 mapping
+// Bypasses string parsers entirely by defining clean connection keys
 const pool = new Pool({
-  connectionString: "postgresql://postgres.nieemjmhanwlymnylcjy:7793989292kadiri@://supabase.com",
+  user: 'postgres.nieemjmhanwlymnylcjy',
+  host: '://supabase.com',
+  database: 'postgres',
+  password: '7793989292kadiri',
+  port: 6543,
   ssl: { rejectUnauthorized: false }
 });
 
@@ -14,7 +18,7 @@ export const db = {
     let index = 1;
     const pgSql = sql.replace(/\?/g, () => `$${index++}`);
     const res = await pool.query(pgSql, params);
-    return res.rows[0];
+    return res.rows;
   },
   all: async (sql, params = []) => {
     let index = 1;
