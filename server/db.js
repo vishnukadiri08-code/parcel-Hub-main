@@ -2,13 +2,9 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-// Clean explicit connection block bypassing string parsers completely
+// Reads the fresh, verified connection string directly from Render's dashboard environment variables
 const pool = new Pool({
-  user: 'postgres.nieemjmhanwlymnylcjy',
-  host: 'aws-0-us-east-1.pooler4.supabase.com',
-  database: 'postgres',
-  password: '7793989292kadiri',
-  port: 6543,
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
@@ -18,7 +14,7 @@ export const db = {
     let index = 1;
     const pgSql = sql.replace(/\?/g, () => `$${index++}`);
     const res = await pool.query(pgSql, params);
-    return res.rows[0] || null;
+    return res.rows[0] || null; // Returns single row object to mimic sqlite db.get
   },
   all: async (sql, params = []) => {
     let index = 1;
