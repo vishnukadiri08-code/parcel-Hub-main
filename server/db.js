@@ -2,16 +2,15 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-// Reads the fresh, verified connection string directly from Render's dashboard environment variables
+// Clean structural options object bypassing string parsers completely
 const pool = new Pool({
   user: 'postgres.nieemjmhanwlymnylcjy',
-  host: '://supabase.com',
+  host: 'aws-0-us-east-1.pooler4.supabase.com',
   database: 'postgres',
   password: '7793989292kadiri',
   port: 6543,
   ssl: { rejectUnauthorized: false }
 });
-
 
 // Promisified DB helpers matching old SQLite execution patterns
 export const db = {
@@ -19,7 +18,7 @@ export const db = {
     let index = 1;
     const pgSql = sql.replace(/\?/g, () => `$${index++}`);
     const res = await pool.query(pgSql, params);
-    return res.rows[0] || null; // Returns single row object to mimic sqlite db.get
+    return res.rows[0] || null;
   },
   all: async (sql, params = []) => {
     let index = 1;
