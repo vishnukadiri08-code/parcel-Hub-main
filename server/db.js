@@ -4,8 +4,8 @@ const { Pool } = pg;
 
 // Connect using the Supabase environment string provided by Render
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Crucial for cloud databases
+  connectionString: "postgresql://postgres.nieemjmhanwlymnylcjy:7793989292kadiri@://supabase.com",
+  ssl: { rejectUnauthorized: false }
 });
 
 // Promisified DB helpers matching your exact old SQLite syntax
