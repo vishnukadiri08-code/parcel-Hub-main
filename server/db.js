@@ -4,10 +4,10 @@ const { Pool } = pg;
 
 const pool = new Pool({
   user: 'postgres.nieemjmhanwlymnylcjy',
-  host: 'nieemjmhanwlymnylcjy.supabase.co',
+  host: '://supabase.com',
   database: 'postgres',
   password: '7793989292kadiri',
-  port: 5432,
+  port: 6543,
   ssl: { rejectUnauthorized: false }
 });
 
