@@ -113,3 +113,5 @@ export async function initDb() {
   }
   console.log('[DB] Supabase PostgreSQL tables initialized successfully.');
 }
+
+
