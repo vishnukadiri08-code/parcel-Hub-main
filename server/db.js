@@ -1,116 +1,89 @@
-import sqlite3 from 'sqlite3';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import pg from 'pg';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { Pool } = pg;
 
-const dataDir = path.resolve(__dirname, process.env.DB_DIR || 'data');
-const configuredDbPath = process.env.DB_PATH
-  ? path.resolve(process.cwd(), process.env.DB_PATH)
-  : path.join(dataDir, 'campus_hub.db');
-
-if (!fs.existsSync(path.dirname(configuredDbPath))) {
-  fs.mkdirSync(path.dirname(configuredDbPath), { recursive: true });
-}
-
-const dbPath = configuredDbPath;
-const rawDb = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Failed to connect to SQLite database:', err.message);
-  } else {
-    console.log(`[DB] Connected to SQLite database at ${dbPath}`);
-  }
+// Connect using the Supabase environment string provided by Render
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // Crucial for cloud databases
 });
 
-// Promisified DB helpers
+// Promisified DB helpers matching your exact old SQLite syntax
 export const db = {
-  get: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      rawDb.get(sql, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+  get: async (sql, params = []) => {
+    // Convert SQLite "?" placeholders to PostgreSQL "\$1, \$2" format dynamically
+    const pgSql = sql.replace(/\?/g, (_, i) => `$${params.indexOf(params[i]) + 1}`);
+    const res = await pool.query(pgSql, params);
+    return res.rows[0];
   },
-  all: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      rawDb.all(sql, params, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows || []);
-      });
-    });
+  all: async (sql, params = []) => {
+    const pgSql = sql.replace(/\?/g, (_, i) => `$${params.indexOf(params[i]) + 1}`);
+    const res = await pool.query(pgSql, params);
+    return res.rows || [];
   },
-  run: (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-      rawDb.run(sql, params, function (err) {
-        if (err) reject(err);
-        else resolve({ lastID: this.lastID, changes: this.changes });
-      });
-    });
+  run: async (sql, params = []) => {
+    const pgSql = sql.replace(/\?/g, (_, i) => `$${params.indexOf(params[i]) + 1}`);
+    const res = await pool.query(pgSql, params);
+    // Mimics SQLite response metrics
+    return { lastID: res.insertId || null, changes: res.rowCount };
   },
-  exec: (sql) => {
-    return new Promise((resolve, reject) => {
-      rawDb.exec(sql, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
+  exec: async (sql) => {
+    return await pool.query(sql);
   }
 };
 
 export async function initDb() {
+  // SQLite queries translated to proper PostgreSQL syntax
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       full_name TEXT NOT NULL,
       badge_id TEXT,
       role TEXT NOT NULL DEFAULT 'staff',
       is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS parcels (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       person_name TEXT NOT NULL,
       phone TEXT NOT NULL,
       app_name TEXT NOT NULL,
       tracking_id TEXT,
       rack_no TEXT NOT NULL,
-      received_at DATETIME NOT NULL,
+      received_at TIMESTAMP NOT NULL,
       received_by TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'Pending',
-      delivered_at DATETIME,
+      delivered_at TIMESTAMP,
       delivered_by TEXT,
       recipient_note TEXT
     );
 
     CREATE TABLE IF NOT EXISTS racks (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       rack_code TEXT UNIQUE NOT NULL,
       zone TEXT NOT NULL,
       capacity INTEGER DEFAULT 25,
       is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS delivery_apps (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       name TEXT UNIQUE NOT NULL,
       color_code TEXT,
       is_active INTEGER DEFAULT 1
     );
 
     CREATE TABLE IF NOT EXISTS audit_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id SERIAL PRIMARY KEY,
       user_id INTEGER,
       username TEXT NOT NULL,
       action TEXT NOT NULL,
       details TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE INDEX IF NOT EXISTS idx_parcels_status ON parcels(status);
@@ -119,12 +92,15 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_parcels_rack ON parcels(rack_no);
     CREATE INDEX IF NOT EXISTS idx_parcels_received ON parcels(received_at);
   `);
+
+  // PostgreSQL string comparison update (replaces SQLite COLLATE NOCASE)
   const retiredAccount = await db.run(
-    'UPDATE users SET is_active = 0 WHERE username = ? COLLATE NOCASE AND is_active = 1',
+    'UPDATE users SET is_active = 0 WHERE LOWER(username) = LOWER(\$1) AND is_active = 1',
     ['guard_priya']
   );
+
   if (retiredAccount.changes > 0) {
     console.log('[DB] Deactivated retired security account.');
   }
-  console.log('[DB] Database tables initialized successfully.');
+  console.log('[DB] Supabase PostgreSQL tables initialized successfully.');
 }
