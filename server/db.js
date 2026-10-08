@@ -2,10 +2,10 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-// Bypasses string parsers entirely by defining clean connection keys
+// Clean explicit connection block bypassing string parsers completely
 const pool = new Pool({
   user: 'postgres.nieemjmhanwlymnylcjy',
-  host: '://supabase.com',
+  host: 'aws-0-us-east-1.pooler4.supabase.com',
   database: 'postgres',
   password: '7793989292kadiri',
   port: 6543,
@@ -18,7 +18,7 @@ export const db = {
     let index = 1;
     const pgSql = sql.replace(/\?/g, () => `$${index++}`);
     const res = await pool.query(pgSql, params);
-    return res.rows;
+    return res.rows[0] || null;
   },
   all: async (sql, params = []) => {
     let index = 1;
@@ -98,7 +98,7 @@ export async function initDb() {
   `);
 
   const retiredAccount = await db.run(
-    'UPDATE users SET is_active = 0 WHERE LOWER(username) = LOWER(\$1) AND is_active = 1',
+    "UPDATE users SET is_active = 0 WHERE LOWER(username) = LOWER(\$1) AND is_active = 1",
     ['guard_priya']
   );
 
