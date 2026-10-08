@@ -3,13 +3,15 @@ import pg from 'pg';
 const { Pool } = pg;
 
 const pool = new Pool({
-  user: 'postgres.nieemjmhanwlymnylcjy',
-  host: '://supabase.com',
-  database: 'postgres',
-  password: '7793989292kadiri',
-  port: 6543,
-  ssl: { rejectUnauthorized: false }
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT || 5432),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'postgres',
+  ssl: { rejectUnauthorized: false },
 });
+
+console.log('Connecting to DB host:', process.env.DB_HOST);
 
 
 // Promisified DB helpers matching old SQLite execution patterns
